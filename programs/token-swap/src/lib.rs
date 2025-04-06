@@ -1,13 +1,13 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 
-declare_id!("Nu7m2dy8oLEqZYjtU5uBEjpAfyFJTsWKzfrQvn2gnSJ");
+declare_id!("YourProgramIDHere");
 
 #[program]
 pub mod token_swap {
     use super::*;
 
-    pub fn swap(ctx: Context<Swap>, amount: u64) -> Result<()> {
+    pub fn swap(ctx: Context<Swap>, amount_a: u64, ratio: u64) -> Result<()> {
         let token_a = &ctx.accounts.token_a;
         let token_b = &ctx.accounts.token_b;
         let user_a = &ctx.accounts.user_a;
@@ -15,10 +15,15 @@ pub mod token_swap {
         let authority = &ctx.accounts.authority;
         let token_program = &ctx.accounts.token_program;
 
-        // Define swap ratio (1:1 for simplicity)
-        let amount_b = amount;
+        // Calculate the amount of Token B based on the swap ratio
+        let amount_b = amount_a * ratio;
 
-        // Transfer token A to user B
+        // Ensure the user has enough Token A to swap
+        if user_a.amount < amount_a {
+            return Err(ErrorCode::InsufficientFunds.into());
+        }
+
+        // Transfer Token A from user A to Token B account
         let cpi_accounts = Transfer {
             from: user_a.to_account_info(),
             to: token_b.to_account_info(),
@@ -26,14 +31,26 @@ pub mod token_swap {
         };
         token::transfer(
             CpiContext::new(token_program.to_account_info(), cpi_accounts),
-            amount,
+            amount_a,
+        )?;
+
+        // Transfer Token B from user B to user A (token swap)
+        let cpi_accounts = Transfer {
+            from: user_b.to_account_info(),
+            to: token_a.to_account_info(),
+            authority: authority.to_account_info(),
+        };
+        token::transfer(
+            CpiContext::new(token_program.to_account_info(), cpi_accounts),
+            amount_b,
         )?;
 
         Ok(())
     }
 }
 
-struct Swap<'info> {
+#[derive(Accounts)]
+pub struct Swap<'info> {
     #[account(mut)]
     pub token_a: Account<'info, TokenAccount>,
     #[account(mut)]
@@ -45,4 +62,10 @@ struct Swap<'info> {
     #[account(mut)]
     pub authority: Signer<'info>,
     pub token_program: Program<'info, Token>,
+}
+
+#[error_code]
+pub enum ErrorCode {
+    #[msg("Insufficient funds in the user A account to perform the swap.")]
+    InsufficientFunds,
 }
