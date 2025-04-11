@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
+use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
 declare_id!("YourProgramIDHere");
 
@@ -7,7 +7,7 @@ declare_id!("YourProgramIDHere");
 pub mod token_swap {
     use super::*;
 
-    pub fn swap(ctx: Context<Swap>, amount_a: u64, ratio: u64) -> Result<()> {
+    pub fn swap(ctx: Context<Swap>, amount_a: u64) -> Result<()> {
         let token_a = &ctx.accounts.token_a;
         let token_b = &ctx.accounts.token_b;
         let user_a = &ctx.accounts.user_a;
@@ -15,8 +15,7 @@ pub mod token_swap {
         let authority = &ctx.accounts.authority;
         let token_program = &ctx.accounts.token_program;
 
-        // Calculate the amount of Token B based on the swap ratio
-        let amount_b = amount_a * ratio;
+        let amount_b = amount_a 
 
         // Ensure the user has enough Token A to swap
         if user_a.amount < amount_a {
