@@ -48,6 +48,12 @@ pub mod direct_token_swap {
             amount,
         )?;
 
+        emit!(SwapExecuted {
+            swapper_a: ctx.accounts.swapper_a.key(),
+            swapper_b: ctx.accounts.swapper_b.key(),
+            amount,
+        });
+
         Ok(())
     }
 }
@@ -76,6 +82,7 @@ pub enum ErrorCode {
     #[msg("Insufficient funds in swapper B's account to perform the swap.")]
     InsufficientFundsB,
 }
+
 // Event to emit after a successful swap
 #[event]
 pub struct SwapExecuted {
@@ -83,9 +90,3 @@ pub struct SwapExecuted {
     pub swapper_b: Pubkey,
     pub amount: u64,
 }
-
-emit!(SwapExecuted {
-    swapper_a: ctx.accounts.swapper_a.key(),
-    swapper_b: ctx.accounts.swapper_b.key(),
-    amount,
-});
