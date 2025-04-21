@@ -1,21 +1,24 @@
-import * as anchor from "@coral-xyz/anchor";
-import BN from "bn.js";
-import assert from "assert";
-import * as web3 from "@solana/web3.js";
-import type { TokenSwap } from "../target/types/token_swap";
+const anchor = require("@coral-xyz/anchor");
+const BN = require("bn.js");
+const assert = require("assert");
+const web3 = require("@solana/web3.js");
 
+// Mocha test suite
 describe("Test", () => {
-  // Configure the client to use the local cluster
+  // Set the Anchor provider (assumes env vars or Anchor.toml is set)
   anchor.setProvider(anchor.AnchorProvider.env());
 
-  const program = anchor.workspace.TokenSwap as anchor.Program<TokenSwap>;
-  
+  // Load the deployed program
+  const program = anchor.workspace.TokenSwap;
+
   it("initialize", async () => {
-    // Generate keypair for the new account
+    // Create a new Keypair for the account
     const newAccountKp = new web3.Keypair();
 
-    // Send transaction
+    // Sample data to store on-chain
     const data = new BN(42);
+
+    // Call the initialize function from your Anchor program
     const txHash = await program.methods
       .initialize(data)
       .accounts({
@@ -25,19 +28,20 @@ describe("Test", () => {
       })
       .signers([newAccountKp])
       .rpc();
+
     console.log(`Use 'solana confirm -v ${txHash}' to see the logs`);
 
-    // Confirm transaction
+    // Wait for transaction confirmation
     await program.provider.connection.confirmTransaction(txHash);
 
-    // Fetch the created account
+    // Fetch the account's on-chain data
     const newAccount = await program.account.newAccount.fetch(
       newAccountKp.publicKey
     );
 
     console.log("On-chain data is:", newAccount.data.toString());
 
-    // Check whether the data on-chain is equal to local 'data'
+    // Assert that stored data matches the expected data
     assert(data.eq(newAccount.data));
   });
 });
