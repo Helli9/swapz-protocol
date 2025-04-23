@@ -8,71 +8,59 @@ pub mod direct_token_swap {
     use super::*;
 
     pub fn swap(ctx: Context<Swap>, amount: u64) -> Result<()> {
-        let sol = &ctx.accounts.token_sol;
-        let jup = &ctx.accounts.token_jup;
-        let swapper_a = &ctx.accounts.swapper_a;
-        let swapper_b = &ctx.accounts.swapper_b;
         let token_program = &ctx.accounts.token_program;
-
-        // Check if Swapper A has sufficient funds to perform the swap
-        if sol.amount < amount {
+    
+        // Check balances
+        if ctx.accounts.token_sol.amount < amount {
             return Err(ErrorCode::InsufficientFundsA.into());
         }
-
-        // Check if Swapper B has sufficient funds to perform the swap
-        if jup.amount < amount {
+    
+        if ctx.accounts.token_jup.amount < amount {
             return Err(ErrorCode::InsufficientFundsB.into());
         }
-
-        // First, transfer tokens from Swapper A's SOL to Swapper B's JUP account
-        let cpi_accounts = Transfer {
-            from: sol.to_account_info(),
-            to: jup.to_account_info(),
-            authority: swapper_a.to_account_info(),
+    
+        // Transfer SOL (wrapped) from A to B
+        let transfer_sol = Transfer {
+            from: ctx.accounts.token_sol.to_account_info(),
+            to: ctx.accounts.token_jup.to_account_info(),
+            authority: ctx.accounts.swapper_a.to_account_info(),
         };
         token::transfer(
-            CpiContext::new(token_program.to_account_info(), cpi_accounts),
+            CpiContext::new(token_program.to_account_info(), transfer_sol),
             amount,
         )?;
-
-        // Then, transfer tokens from Swapper B's JUP to Swapper A's SOL account
-        let cpi_accounts = Transfer {
-            from: jup.to_account_info(),
-            to: sol.to_account_info(),
-            authority: swapper_b.to_account_info(),
+    
+        // Transfer JUP from B to A
+        let transfer_jup = Transfer {
+            from: ctx.accounts.token_jup.to_account_info(),
+            to: ctx.accounts.token_sol.to_account_info(),
+            authority: ctx.accounts.swapper_b.to_account_info(),
         };
         token::transfer(
-            CpiContext::new(token_program.to_account_info(), cpi_accounts),
+            CpiContext::new(token_program.to_account_info(), transfer_jup),
             amount,
         )?;
-
-        // Emit an event after successful swap
-        emit!(SwapExecuted {
-            swapper_a: ctx.accounts.swapper_a.key(),
-            swapper_b: ctx.accounts.swapper_b.key(),
-            amount,
-        });
-
+    
         Ok(())
     }
 }
 
-const SOL: &str = "So11111111111111111111111111111111111111112"; // wrapped SOL
-const JUP: &str = "JUP4Fb2cqiRUcaTHdrPC8h2gNsA2ETXiPDD33WcGuJB"; // JUP
+//const SOL: &str = "So11111111111111111111111111111111111111112"; // wrapped SOL
+//const JUP: &str = "JUP4Fb2cqiRUcaTHdrPC8h2gNsA2ETXiPDD33WcGuJB"; // JUP
 
 #[derive(Accounts)]
 pub struct Swap<'info> {
     #[account(mut)]
-    pub token_sol: Account<'info, TokenAccount>,
+    pub token_sol: Account<'info, TokenAccount>, // owned by Swapper A
 
     #[account(mut)]
-    pub token_jup: Account<'info, TokenAccount>,
+    pub token_jup: Account<'info, TokenAccount>, // owned by Swapper B
 
-    #[account(mut)]
-    pub swapper_a: Signer<'info>,
+    #[account(signer)]
+    pub swapper_a: AccountInfo<'info>,
 
-    #[account(mut)]
-    pub swapper_b: Signer<'info>,
+    #[account(signer)]
+    pub swapper_b: AccountInfo<'info>,
 
     pub token_program: Program<'info, Token>,
 }
