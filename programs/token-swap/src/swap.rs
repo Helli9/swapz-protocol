@@ -50,11 +50,12 @@ pub mod direct_token_swap {
 
 #[derive(Accounts)]
 pub struct Swap<'info> {
-    #[account(mut)]
-    pub token_sol: Account<'info, TokenAccount>, // owned by Swapper A
+    #[account(mut, associated_token::mint = SOL_MINT, associated_token::authority = swapper_a)]
+pub token_sol: Account<'info, TokenAccount>,
 
-    #[account(mut)]
-    pub token_jup: Account<'info, TokenAccount>, // owned by Swapper B
+#[account(mut, associated_token::mint = JUP_MINT, associated_token::authority = swapper_b)]
+pub token_jup: Account<'info, TokenAccount>,
+
 
     #[account(signer)]
     pub swapper_a: AccountInfo<'info>,
