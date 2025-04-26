@@ -1,11 +1,10 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
-use std::str::FromStr;
 
 declare_id!("GXeBmV5kGR37ULMKTjdyRXjamQoXG55E7nPM1geUW37Q");
 
-const SOL: &str = "So11111111111111111111111111111111111111112";
-const JUP: &str = "JUP4Fb2cqiRUcaTHdrPC8h2gNsA2ETXiPDD33WcGuJB";
+const SOL_MINT: Pubkey = pubkey!("So11111111111111111111111111111111111111112");
+const JUP_MINT: Pubkey = pubkey!("JUP4Fb2cqiRUcaTHdrPC8h2gNsA2ETXiPDD33WcGuJB");
 
 #[program]
 pub mod direct_token_swap {
@@ -59,28 +58,28 @@ pub mod direct_token_swap {
 pub struct Swap<'info> {
     #[account(
         mut,
-        constraint = token_sol_from.mint == Pubkey::from_str(SOL)?,
+        constraint = token_sol_from.mint == SOL_MINT,
         constraint = token_sol_from.owner == swapper_a.key(),
     )]
     pub token_sol_from: Account<'info, TokenAccount>,
 
     #[account(
         mut,
-        constraint = token_sol_to.mint == Pubkey::from_str(SOL)?,
+        constraint = token_sol_to.mint == SOL_MINT,
         constraint = token_sol_to.owner == swapper_b.key(),
     )]
     pub token_sol_to: Account<'info, TokenAccount>,
 
     #[account(
         mut,
-        constraint = token_jup_from.mint == Pubkey::from_str(JUP)?,
+        constraint = token_jup_from.mint == JUP_MINT,
         constraint = token_jup_from.owner == swapper_b.key(),
     )]
     pub token_jup_from: Account<'info, TokenAccount>,
 
     #[account(
         mut,
-        constraint = token_jup_to.mint == Pubkey::from_str(JUP)?,
+        constraint = token_jup_to.mint == JUP_MINT,
         constraint = token_jup_to.owner == swapper_a.key(),
     )]
     pub token_jup_to: Account<'info, TokenAccount>,
