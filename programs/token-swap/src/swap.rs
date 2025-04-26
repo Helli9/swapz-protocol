@@ -1,7 +1,11 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
+use std::str::FromStr;
 
-declare_id!("3oL1cksAJTYcutkNBhYXW2Q7EX8HH2LokwCU75gXWixq");
+declare_id!("GXeBmV5kGR37ULMKTjdyRXjamQoXG55E7nPM1geUW37Q");
+
+const SOL: &str = "So11111111111111111111111111111111111111112";
+const JUP: &str = "JUP4Fb2cqiRUcaTHdrPC8h2gNsA2ETXiPDD33WcGuJB";
 
 #[program]
 pub mod direct_token_swap {
@@ -9,59 +13,83 @@ pub mod direct_token_swap {
 
     pub fn swap(ctx: Context<Swap>, amount: u64) -> Result<()> {
         let token_program = &ctx.accounts.token_program;
-    
+
         // Check balances
-        if ctx.accounts.token_sol.amount < amount {
+        if ctx.accounts.token_sol_from.amount < amount {
             return Err(ErrorCode::InsufficientFundsA.into());
         }
-    
-        if ctx.accounts.token_jup.amount < amount {
+
+        if ctx.accounts.token_jup_from.amount < amount {
             return Err(ErrorCode::InsufficientFundsB.into());
         }
-    
-        // Transfer SOL (wrapped) from A to B
+
+        // Transfer SOL (wrapped) from Swapper A to Swapper B
         let transfer_sol = Transfer {
-            from: ctx.accounts.token_sol.to_account_info(),
-            to: ctx.accounts.token_jup.to_account_info(),
+            from: ctx.accounts.token_sol_from.to_account_info(),
+            to: ctx.accounts.token_sol_to.to_account_info(),
             authority: ctx.accounts.swapper_a.to_account_info(),
         };
         token::transfer(
             CpiContext::new(token_program.to_account_info(), transfer_sol),
             amount,
         )?;
-    
-        // Transfer JUP from B to A
+
+        // Transfer JUP from Swapper B to Swapper A
         let transfer_jup = Transfer {
-            from: ctx.accounts.token_jup.to_account_info(),
-            to: ctx.accounts.token_sol.to_account_info(),
+            from: ctx.accounts.token_jup_from.to_account_info(),
+            to: ctx.accounts.token_jup_to.to_account_info(),
             authority: ctx.accounts.swapper_b.to_account_info(),
         };
         token::transfer(
             CpiContext::new(token_program.to_account_info(), transfer_jup),
             amount,
         )?;
-    
+
+        emit!(SwapExecuted {
+            swapper_a: ctx.accounts.swapper_a.key(),
+            swapper_b: ctx.accounts.swapper_b.key(),
+            amount,
+        });
+
         Ok(())
     }
 }
 
-//const SOL: &str = "So11111111111111111111111111111111111111112"; // wrapped SOL
-//const JUP: &str = "JUP4Fb2cqiRUcaTHdrPC8h2gNsA2ETXiPDD33WcGuJB"; // JUP
-
 #[derive(Accounts)]
 pub struct Swap<'info> {
-    #[account(mut, associated_token::mint = SOL_MINT, associated_token::authority = swapper_a)]
-pub token_sol: Account<'info, TokenAccount>,
+    #[account(
+        mut,
+        constraint = token_sol_from.mint == Pubkey::from_str(SOL)?,
+        constraint = token_sol_from.owner == swapper_a.key(),
+    )]
+    pub token_sol_from: Account<'info, TokenAccount>,
 
-#[account(mut, associated_token::mint = JUP_MINT, associated_token::authority = swapper_b)]
-pub token_jup: Account<'info, TokenAccount>,
+    #[account(
+        mut,
+        constraint = token_sol_to.mint == Pubkey::from_str(SOL)?,
+        constraint = token_sol_to.owner == swapper_b.key(),
+    )]
+    pub token_sol_to: Account<'info, TokenAccount>,
 
+    #[account(
+        mut,
+        constraint = token_jup_from.mint == Pubkey::from_str(JUP)?,
+        constraint = token_jup_from.owner == swapper_b.key(),
+    )]
+    pub token_jup_from: Account<'info, TokenAccount>,
 
-    #[account(signer)]
-    pub swapper_a: AccountInfo<'info>,
+    #[account(
+        mut,
+        constraint = token_jup_to.mint == Pubkey::from_str(JUP)?,
+        constraint = token_jup_to.owner == swapper_a.key(),
+    )]
+    pub token_jup_to: Account<'info, TokenAccount>,
 
-    #[account(signer)]
-    pub swapper_b: AccountInfo<'info>,
+    #[account(mut, signer)]
+    pub swapper_a: Signer<'info>,
+
+    #[account(mut, signer)]
+    pub swapper_b: Signer<'info>,
 
     pub token_program: Program<'info, Token>,
 }
@@ -74,7 +102,6 @@ pub enum ErrorCode {
     InsufficientFundsB,
 }
 
-// Event to emit after a successful swap
 #[event]
 pub struct SwapExecuted {
     pub swapper_a: Pubkey,
