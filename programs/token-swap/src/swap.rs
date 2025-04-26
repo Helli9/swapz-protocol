@@ -3,8 +3,8 @@ use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 
 declare_id!("GXeBmV5kGR37ULMKTjdyRXjamQoXG55E7nPM1geUW37Q");
 
-const SOL_MINT: Pubkey = pubkey!("So11111111111111111111111111111111111111112");
-const JUP_MINT: Pubkey = pubkey!("JUP4Fb2cqiRUcaTHdrPC8h2gNsA2ETXiPDD33WcGuJB");
+const SOL_MINT: &str = "So11111111111111111111111111111111111111112";
+const JUP_MINT: &str = "JUP4Fb2cqiRUcaTHdrPC8h2gNsA2ETXiPDD33WcGuJB";
 
 #[program]
 pub mod direct_token_swap {
