@@ -29,8 +29,6 @@ describe("direct_token_swap", () => {
     let swapperA = anchor.web3.Keypair.generate();
     let swapperB = anchor.web3.Keypair.generate();
 
-    // Public Keys for the Associated Token Accounts (ATAs) that will hold the tokens.
-    // These are derived from the swapper's public key and the token mint's public key.
     let tokenSolFrom; // Swapper A's ATA for dummy SOL
     let tokenSolTo;   // Swapper B's ATA for dummy SOL
     let tokenJupFrom; // Swapper B's ATA for dummy JUP
@@ -49,21 +47,17 @@ describe("direct_token_swap", () => {
     const swapAmount = new anchor.BN(100); // Example amount. Adjust based on your token decimals if needed.
 
     before(async () => {
-        // This 'before' block runs once before all tests.
-        // It sets up the necessary accounts and tokens for the swap.
 
         console.log("Setting up test environment...");
 
         // 1. Airdrop SOL to swapper accounts
         // Swappers need SOL to pay for transaction fees and account rent.
         const solAirdropAmount = 100 * anchor.web3.LAMPORTS_PER_SOL; // A generous amount
-        console.log(`Airdropping ${solAirdropAmount} lamports to Swapper A (${swapperA.publicKey.toBase58()})`);
         await provider.connection.confirmTransaction(
             await provider.connection.requestAirdrop(swapperA.publicKey, solAirdropAmount),
             "confirmed"
         );
 
-        console.log(`Airdropping ${solAirdropAmount} lamports to Swapper B (${swapperB.publicKey.toBase58()})`);
         await provider.connection.confirmTransaction(
             await provider.connection.requestAirdrop(swapperB.publicKey, solAirdropAmount),
             "confirmed"
