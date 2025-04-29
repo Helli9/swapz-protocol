@@ -1,11 +1,7 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Token, TokenAccount, Transfer};
-use solana_program::pubkey; // Add this import for the pubkey! macro
+use anchor_spl::token::{self, Token, TokenAccount, Transfer, TransferParams};
 
 declare_id!("3At9UEz1bGW2ofW4twm4EBEmz6XRB22K19PubbmJGNP2");
-
-const SOL: Pubkey = pubkey!("So11111111111111111111111111111111111111112");
-const JUP: Pubkey = pubkey!("JUP4Fb2cqiRUcaTHdrPC8h2gNsA2ETXiPDD33WcGuJB");
 
 // Define the event before using it in the program
 #[event]
@@ -20,103 +16,62 @@ pub struct SwapExecuted {
 pub mod direct_token_swap {
     use super::*;
 
-    pub fn swap(ctx: Context<Swap>, amount: u64) -> Result<()> {
-        // Verify both parties have sufficient funds
+    pub fn buy_nu(ctx: Context<BuyNU>, amount_nu: u64) -> Result<()> {
+        // Ensure user has enough USDT
         require!(
-            ctx.accounts.token_sol_from.amount >= amount,
-            ErrorCode::InsufficientFundsA
-        );
-        require!(
-            ctx.accounts.token_jup_from.amount >= amount,
-            ErrorCode::InsufficientFundsB
+            ctx.accounts.usdt_from.amount >= amount_nu,
+            ErrorCode::InsufficientFunds
         );
 
-        // Transfer SOL from A to B (signed by swapper_a)
-        let transfer_sol = Transfer {
-            from: ctx.accounts.token_sol_from.to_account_info(),
-            to: ctx.accounts.token_sol_to.to_account_info(),
-            authority: ctx.accounts.swapper_a.to_account_info(),
+        let cpi_usdt_transfer = Transfer {
+            from: ctx.accounts.usdt_from.to_account_info(),
+            to: ctx.accounts.usdt_pool.to_account_info(),
+            authority: ctx.accounts.swapper.to_account_info(),
         };
+
         token::transfer(
             CpiContext::new(
                 ctx.accounts.token_program.to_account_info(),
-                transfer_sol,
+                cpi_usdt_transfer,
             ),
-            amount,
+            amount_nu,
         )?;
 
-        // Transfer JUP from B to A (signed by swapper_b)
-        let transfer_jup = Transfer {
-            from: ctx.accounts.token_jup_from.to_account_info(),
-            to: ctx.accounts.token_jup_to.to_account_info(),
-            authority: ctx.accounts.swapper_b.to_account_info(),
+        let cpi_nu_transfer = Transfer {
+            from: ctx.accounts.nu_pool.to_account_info(),
+            to: ctx.accounts.nu_to.to_account_info(),
+            authority: ctx.accounts.pool_authority.to_account_info(), // needs to be a signer (PDA)
         };
-        token::transfer(
-            CpiContext::new(
-                ctx.accounts.token_program.to_account_info(),
-                transfer_jup,
-            ),
-            amount,
-        )?;
 
-        emit!(SwapExecuted {
-            swapper_a: ctx.accounts.swapper_a.key(),
-            swapper_b: ctx.accounts.swapper_b.key(),
-            amount,
-            timestamp: Clock::get()?.unix_timestamp,
-        });
+        token::transfer(
+            CpiContext::new_with_signer(
+                ctx.accounts.token_program.to_account_info(),
+                cpi_nu_transfer,
+                &[&[b"authority", &[ctx.bumps.pool_authority]]], // example seeds
+            ),
+            amount_nu,
+        )?;
 
         Ok(())
     }
 }
-
 #[derive(Accounts)]
-pub struct Swap<'info> {
-    // SOL accounts
-    #[account(
-        mut,
-        constraint = token_sol_from.mint == SOL,
-        constraint = token_sol_from.owner == swapper_a.key(),
-    )]
-    pub token_sol_from: Account<'info, TokenAccount>,
-    
-    #[account(
-        mut,
-        constraint = token_sol_to.mint == SOL,
-        constraint = token_sol_to.owner == swapper_b.key(),
-    )]
-    pub token_sol_to: Account<'info, TokenAccount>,
-
-    // JUP accounts
-    #[account(
-        mut,
-        constraint = token_jup_from.mint == JUP,
-        constraint = token_jup_from.owner == swapper_b.key(),
-    )]
-    pub token_jup_from: Account<'info, TokenAccount>,
-    
-    #[account(
-        mut,
-        constraint = token_jup_to.mint == JUP,
-        constraint = token_jup_to.owner == swapper_a.key(),
-    )]
-    pub token_jup_to: Account<'info, TokenAccount>,
-
-    // Participants must be signers
+pub struct BuyNU<'info> {
     #[account(mut)]
-    pub swapper_a: Signer<'info>,
+    pub swapper: Signer<'info>,
+
     #[account(mut)]
-    pub swapper_b: Signer<'info>,
+    pub usdt_from: Box<Account<'info, TokenAccount>>,
+    #[account(mut)]
+    pub usdt_pool: Box<Account<'info, TokenAccount>>,
+
+    #[account(mut)]
+    pub nu_pool: Box<Account<'info, TokenAccount>>,
+    #[account(mut)]
+    pub nu_to: Box<Account<'info, TokenAccount>>,
+
+    /// CHECK: Make sure this is a PDA signer
+    pub pool_authority: AccountInfo<'info>,
 
     pub token_program: Program<'info, Token>,
-}
-
-#[error_code]
-pub enum ErrorCode {
-    #[msg("Insufficient SOL funds in swapper A's account")]
-    InsufficientFundsA,
-    #[msg("Insufficient JUP funds in swapper B's account")]
-    InsufficientFundsB,
-    #[msg("Token account owner does not match signer")]
-    OwnerMismatch,
 }
