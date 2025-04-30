@@ -3,15 +3,13 @@ use anchor_spl::token::{self, Token, TokenAccount, Transfer, TransferParams};
 
 declare_id!("3At9UEz1bGW2ofW4twm4EBEmz6XRB22K19PubbmJGNP2");
 
-// Define the event before using it in the program
-#[event]
-pub struct SwapExecuted {
-    pub swapper_a: Pubkey,
-    pub swapper_b: Pubkey,
-    pub amount: u64,
-    pub timestamp: i64,
-}
 
+#[event]
+pub struct BuyNuEvent {
+    pub user: Pubkey,
+    pub usdt_amount: u64,
+    pub nu_amount: u64,
+}
 #[program]
 pub mod direct_token_swap {
     use super::*;
@@ -51,6 +49,13 @@ pub mod direct_token_swap {
             ),
             amount_nu,
         )?;
+
+        // Emit the event
+        emit!(BuyNuEvent {
+        user: ctx.accounts.swapper.key(),
+        usdt_amount: amount_nu,
+        nu_amount: amount_nu,
+         });
 
         Ok(())
     }
