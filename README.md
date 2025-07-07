@@ -1,50 +1,24 @@
-Swapz Protocol - README
-Overview
-Swapz Protocol is a decentralized token swap protocol built on the Solana blockchain. This smart contract enables trustless token exchanges between users with minimal fees and maximum efficiency.
+# Swapz Protocol 🔄
 
-Features
-Decentralized Token Swaps: Peer-to-peer token exchanges without intermediaries
+![Swapz Protocol Banner](https://via.placeholder.com/1200x400?text=Swapz+Protocol+-+Decentralized+Token+Swaps+on+Solana)
 
-Low Fees: Leverages Solana's high throughput and low transaction costs
+A decentralized token swap protocol built on Solana, enabling fast, low-cost token exchanges with minimal slippage.
 
-Secure: Built with Rust and Solana's security best practices
+## Features ✨
 
-Permissionless: Open for anyone to participate
+- 🏦 **Automated Market Maker (AMM)** - Decentralized liquidity pools
+- ⚡ **Solana Speed** - Sub-second swaps with negligible fees
+- 🔒 **Secure** - Rust-based, audited smart contracts
+- 🌉 **Cross-Chain Ready** - Designed for future interoperability
+- 📊 **Dynamic Fees** - Adaptive pricing based on pool depth
 
-Smart Contract Details
-The Swapz Protocol smart contract is written in Rust and compiled to run on Solana's Sealevel runtime.
 
-Key Functions:
-Initialize Swap Pool: Creates a new liquidity pool for a token pair
+Getting Started 🚀
+* Prerequisites
+  - Solana CLI (>=1.10.0)
+  - Rust (>=1.60.0)
+  - NodeJS (>=16.0.0) for frontend
 
-Add Liquidity: Allows users to deposit tokens into a pool
-
-Remove Liquidity: Allows liquidity providers to withdraw their funds
-
-Swap Tokens: Executes token exchanges between users
-
-Price Calculation: Automated market maker (AMM) formula determines exchange rates
-
-Getting Started
-Prerequisites
-Solana CLI tools installed
-
-Rust and Cargo installed
-
-Anchor framework (if used)
-
-Installation
-Clone this repository:
-
-bash
+* Installation
 git clone https://github.com/your-username/swapz-protocol.git
 cd swapz-protocol
-Build the program:
-
-bash
-cargo build-bpf
-Deploy to Solana:
-
-bash
-solana program deploy ./target/deploy/swapz_protocol.so
-Us
