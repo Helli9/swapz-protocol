@@ -1,23 +1,50 @@
-💱 Direct Token Swap — Solana Program
-   This is a Solana smart contract (program) built with Anchor that enables users to swap USDT for NU tokens. The swap is conducted directly between user wallets and program-controlled pools, with events emitted       for transparency.
+Swapz Protocol - README
+Overview
+Swapz Protocol is a decentralized token swap protocol built on the Solana blockchain. This smart contract enables trustless token exchanges between users with minimal fees and maximum efficiency.
 
-📌 Features
+Features
+Decentralized Token Swaps: Peer-to-peer token exchanges without intermediaries
 
-  🔁 Direct Token Swap: Users can buy NU tokens by paying in USDT at a 1:1 ratio.
-  💼 Token Vaults: Swaps are executed using token pool accounts for USDT and NU.
-  📡 Event Emission: Emits a BuyNuEvent after every successful swap.
-  🔐 Secure Transfers: Enforces balance checks and uses PDA-based authorities.
+Low Fees: Leverages Solana's high throughput and low transaction costs
 
+Secure: Built with Rust and Solana's security best practices
 
-🚀 Built With
+Permissionless: Open for anyone to participate
 
-  Solana
-  Anchor Framework
-  SPL Token
+Smart Contract Details
+The Swapz Protocol smart contract is written in Rust and compiled to run on Solana's Sealevel runtime.
 
+Key Functions:
+Initialize Swap Pool: Creates a new liquidity pool for a token pair
 
-🧑‍💻 Contributing
-  Pull requests are welcome! If you find bugs or want to extend functionality (e.g., dynamic pricing), feel free to fork and contribute.
+Add Liquidity: Allows users to deposit tokens into a pool
 
-📄 License
-  MIT License
+Remove Liquidity: Allows liquidity providers to withdraw their funds
+
+Swap Tokens: Executes token exchanges between users
+
+Price Calculation: Automated market maker (AMM) formula determines exchange rates
+
+Getting Started
+Prerequisites
+Solana CLI tools installed
+
+Rust and Cargo installed
+
+Anchor framework (if used)
+
+Installation
+Clone this repository:
+
+bash
+git clone https://github.com/your-username/swapz-protocol.git
+cd swapz-protocol
+Build the program:
+
+bash
+cargo build-bpf
+Deploy to Solana:
+
+bash
+solana program deploy ./target/deploy/swapz_protocol.so
+Us
